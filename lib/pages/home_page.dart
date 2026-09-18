@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/region.dart';
+import '../services/geojson_service.dart';
+import '../widgets/map_painter.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -63,7 +66,23 @@ class HomePage extends StatelessWidget {
           SizedBox(width: 10),            
         ],
       ),
-      body: Container(color: Colors.white),
+      body: FutureBuilder<List<Region>>(
+        future: GeojsonService().loadRegions(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Center(
+            child: CustomPaint(
+              size: const Size(900, 450),
+              painter: MapPainter(snapshot.data!, {'thailand'}),
+            ),
+          );
+        },
+      ),
     );
   }
 }
