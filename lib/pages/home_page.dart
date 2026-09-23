@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:syncfusion_flutter_maps/maps.dart';
 import '../models/region.dart';
 import '../services/geojson_service.dart';
-import '../widgets/map_painter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,106 +15,325 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Set<String> guessed = {};
   final TextEditingController controller = TextEditingController();
+  late MapZoomPanBehavior _zoomPanBehavior;
+
+  List<Region>? _regions;
+  bool _isLoading = true;
+  String _shapeKey = 'name';
+
+  @override
+  void initState() {
+    super.initState();
+    _zoomPanBehavior = MapZoomPanBehavior(
+      enablePinching: true,
+      enablePanning: true,
+      zoomLevel: 2.5,
+      minZoomLevel: 1.8,
+      maxZoomLevel: 10.0,
+      focalLatLng: const MapLatLng(15.0, 10.0),
+    );
+    _loadRegions();
+  }
+
+  Future<void> _loadRegions() async {
+    try {
+      final text = await rootBundle.loadString('assets/countries.geojson');
+      final data = jsonDecode(text);
+      if (data['features'] != null && data['features'].isNotEmpty) {
+        final props = data['features'][0]['properties'];
+        if (props['name'] != null) {
+          _shapeKey = 'name';
+        } else if (props['ADMIN'] != null) {
+          _shapeKey = 'ADMIN';
+        }
+      }
+
+      final regionsData = await GeojsonService().loadRegions();
+      if (mounted) {
+        setState(() {
+          _regions = regionsData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  int get totalCountries {
+    if (_regions == null) return 0;
+    return _regions!.map((r) => r.id).toSet().length;
+  }
+
+  void _showWinDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            '🎉 ยินดีด้วย! ชนะเกมแล้ว 🎉',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.emoji_events_rounded,
+                color: Colors.amber,
+                size: 80,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'คุณสามารถทายชื่อประเทศได้ครบทั้งหมด\n$totalCountries ประเทศแล้ว!',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, height: 1.4),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('เล่นใหม่อีกครั้ง'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff4f6fb0),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  guessed.clear();
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void checkAnswer(String value) {
-    final answer = value.trim().toLowerCase();
-    if (answer.isEmpty) return;
+    final input = value.trim().toLowerCase();
+    if (input.isEmpty || _regions == null) return;
+
+    String? matchedId;
+    for (final r in _regions!) {
+      if (r.id.toLowerCase() == input) {
+        matchedId = r.id;
+        break;
+      }
+      try {
+        final dynamic dyn = r;
+        if (dyn.name != null &&
+            dyn.name.toString().trim().toLowerCase() == input) {
+          matchedId = r.id;
+          break;
+        }
+      } catch (_) {}
+    }
+
     setState(() {
-      guessed.add(answer);
+      if (matchedId != null) {
+        guessed.add(matchedId);
+      } else {
+        guessed.add(input);
+      }
     });
+
     controller.clear();
+
+    if (totalCountries > 0 && guessed.length >= totalCountries) {
+      Future.delayed(const Duration(milliseconds: 300), _showWinDialog);
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  MapShapeSource _buildShapeSource() {
+    return MapShapeSource.asset(
+      'assets/countries.geojson',
+      shapeDataField: _shapeKey,
+      dataCount: _regions?.length ?? 0,
+      primaryValueMapper: (int index) => _regions![index].name,
+      shapeColorValueMapper: (int index) {
+        final region = _regions![index];
+        final isGuessed = guessed.contains(region.id) ||
+            guessed.contains(region.id.toLowerCase()) ||
+            guessed.contains(region.name.toLowerCase());
+        return isGuessed ? Colors.green : Colors.grey.shade400;
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Color(0xff4f6fb0),
+        backgroundColor: const Color(0xff4f6fb0),
         foregroundColor: Colors.white,
-        toolbarHeight: 60,
-        titleSpacing: 10,
+        toolbarHeight: isLandscape ? 48 : 60,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 8,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(4)),
-              child: Image.network(
-                height: 40,
-                "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Pornhub-logo.svg/3840px-Pornhub-logo.svg.png?utm_source=th.wikipedia.org&utm_campaign=index&utm_content=thumbnail",
-              ),
-            ),
-            SizedBox(width: 50),
             TextButton(
               onPressed: () {},
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text("Menu"),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+              child: const Text("Menu", style: TextStyle(fontSize: 13)),
             ),
             TextButton(
               onPressed: () {},
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text("Random"),
-            ),
-            SizedBox(width: 20),
-            Container(
-              width: 200,
-              height: 36,
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(5),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
-              child: Text(
-                "Search Quizzes users or tags",
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
+              child: const Text("Random", style: TextStyle(fontSize: 13)),
             ),
           ],
         ),
         actions: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Score: ${guessed.length}/${_isLoading ? "..." : totalCountries}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
               foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: Text("Create Account"),
+            child: const Text("Create Account", style: TextStyle(fontSize: 13)),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'พิมพ์ชื่อประเทศ แล้วกด Enter',
-              ),
-              onSubmitted: checkAnswer,
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<Region>>(
-              future: GeojsonService().loadRegions(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return Center(
-                  child: CustomPaint(
-                    size: const Size(900, 450),
-                    painter: MapPainter(snapshot.data!, guessed),
+          // 1. แผนที่โลกจาก Syncfusion
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+                  color: const Color(0xffeef3f8),
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: SfMaps(
+                    layers: [
+                      MapShapeLayer(
+                        source: _buildShapeSource(),
+                        zoomPanBehavior: _zoomPanBehavior,
+                        strokeColor: Colors.white,
+                        strokeWidth: 0.6,
+                        color: Colors.grey.shade400,
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+
+          // 2. ช่องพิมพ์คำตอบลอยอยู่ด้านล่าง
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: isLandscape ? 8 : 14,
+            child: SafeArea(
+              top: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              hintText: 'พิมพ์ชื่อประเทศ แล้วกด Enter',
+                            ),
+                            onSubmitted: checkAnswer,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 42,
+                          child: ElevatedButton(
+                            onPressed: () => checkAnswer(controller.text),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff4f6fb0),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
+                            ),
+                            child: const Text(
+                              'Enter',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

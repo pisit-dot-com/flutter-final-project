@@ -7,13 +7,20 @@ class MapPainter extends CustomPainter {
 
   MapPainter(this.regions, this.guessed);
 
+  // ขยายขอบเขตละติจูดให้ครอบคลุมขั้วโลกใต้ (แอนตาร์กติกา) เต็มผืน
+  static const minX = -180.0, maxX = 180.0;
+  static const minY = -85.0, maxY = 85.0; 
+  static double get aspectRatio => (maxX - minX) / (maxY - minY); // 360 / 170 ≈ 2.12
+
   @override
   void paint(Canvas canvas, Size size) {
-    const minX = -180.0, maxX = 180.0, minY = -90.0, maxY = 90.0;
-    final scale = [
-      size.width / (maxX - minX),
-      size.height / (maxY - minY),
-    ].reduce((a, b) => a < b ? a : b);
+    // สีพื้นผิวน้ำทะเล
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = const Color(0xffeef3f8),
+    );
+
+    final scale = size.height / (maxY - minY);
 
     Offset toScreen(Offset p) =>
         Offset((p.dx - minX) * scale, (maxY - p.dy) * scale);
@@ -28,13 +35,18 @@ class MapPainter extends CustomPainter {
       for (final ring in r.rings) {
         path.addPolygon(ring.map(toScreen).toList(), true);
       }
+
+      final isGuessed = guessed.contains(r.id) ||
+          guessed.contains(r.id.toLowerCase());
+
       final fill = Paint()
-        ..color = guessed.contains(r.id) ? Colors.green : Colors.grey.shade400;
+        ..color = isGuessed ? Colors.green : Colors.grey.shade400;
+
       canvas.drawPath(path, fill);
       canvas.drawPath(path, border);
     }
   }
 
   @override
-  bool shouldRepaint(MapPainter old) => old.guessed != guessed;
+  bool shouldRepaint(covariant MapPainter oldDelegate) => true;
 }
