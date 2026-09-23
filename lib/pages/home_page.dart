@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:syncfusion_flutter_maps/maps.dart';
 import '../models/region.dart';
@@ -196,26 +197,32 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 8,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton.icon(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+                icon: const Icon(CupertinoIcons.line_horizontal_3, size: 16),
+                label: const Text("Menu", style: TextStyle(fontSize: 13)),
               ),
-              child: const Text("Menu", style: TextStyle(fontSize: 13)),
-            ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+              TextButton.icon(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+                icon: const Icon(CupertinoIcons.shuffle, size: 16),
+                label: const Text("Random", style: TextStyle(fontSize: 13)),
               ),
-              child: const Text("Random", style: TextStyle(fontSize: 13)),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           Center(
@@ -226,13 +233,20 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.white24,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(
-                'Score: ${guessed.length}/${_isLoading ? "..." : totalCountries}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(CupertinoIcons.flag_fill, size: 13, color: Colors.amberAccent),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Score: ${guessed.length}/${_isLoading ? "..." : totalCountries}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ],
               ),
             ),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
@@ -242,7 +256,8 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Text("Create Account", style: TextStyle(fontSize: 13)),
+            icon: const Icon(CupertinoIcons.person_add_solid, size: 15),
+            label: const Text("Create Account", style: TextStyle(fontSize: 13)),
           ),
           const SizedBox(width: 8),
         ],
@@ -305,6 +320,11 @@ class _HomePageState extends State<HomePage> {
                                 vertical: 10,
                               ),
                               hintText: 'พิมพ์ชื่อประเทศ แล้วกด Enter',
+                              prefixIcon: Icon(
+                                CupertinoIcons.search,
+                                size: 18,
+                                color: Colors.black54,
+                              ),
                             ),
                             onSubmitted: checkAnswer,
                           ),
