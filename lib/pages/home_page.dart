@@ -16,23 +16,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Set<String> guessed = {};
   final TextEditingController controller = TextEditingController();
-  late MapZoomPanBehavior _zoomPanBehavior;
 
   List<Region>? _regions;
   bool _isLoading = true;
   String _shapeKey = 'name';
 
+  // ตัวแปรควบคุมพิกัดและรอบการจัดกึ่งกลางของแผนที่
+  int _mapKey = 0;
+  MapLatLng _focalLatLng = const MapLatLng(15.0, 10.0);
+  double _zoomLevel = 2.5;
+
   @override
   void initState() {
     super.initState();
-    _zoomPanBehavior = MapZoomPanBehavior(
-      enablePinching: true,
-      enablePanning: true,
-      zoomLevel: 2.5,
-      minZoomLevel: 1.8,
-      maxZoomLevel: 10.0,
-      focalLatLng: const MapLatLng(15.0, 10.0),
-    );
     _loadRegions();
   }
 
@@ -68,6 +64,30 @@ class _HomePageState extends State<HomePage> {
   int get totalCountries {
     if (_regions == null) return 0;
     return _regions!.map((r) => r.id).toSet().length;
+  }
+
+  // คำนวณหาจุดกึ่งกลาง (Latitude, Longitude) ของประเทศจากแผ่นดินใหญ่
+  MapLatLng _calculateRegionCenter(Region region) {
+    if (region.rings.isEmpty) {
+      return const MapLatLng(15.0, 10.0);
+    }
+
+    // เลือก Polygon ที่มีจำนวนจุดมากที่สุด (แผ่นดินผืนใหญ่) เพื่อไม่ให้หลุดไปเกาะเล็ก
+    List<Offset> mainRing = region.rings.first;
+    for (final ring in region.rings) {
+      if (ring.length > mainRing.length) {
+        mainRing = ring;
+      }
+    }
+
+    double sumLat = 0.0;
+    double sumLng = 0.0;
+    for (final p in mainRing) {
+      sumLng += p.dx; // Longitude
+      sumLat += p.dy; // Latitude
+    }
+
+    return MapLatLng(sumLat / mainRing.length, sumLng / mainRing.length);
   }
 
   void _showWinDialog() {
@@ -117,6 +137,9 @@ class _HomePageState extends State<HomePage> {
                 Navigator.of(context).pop();
                 setState(() {
                   guessed.clear();
+                  _focalLatLng = const MapLatLng(15.0, 10.0);
+                  _zoomLevel = 2.5;
+                  _mapKey++;
                 });
               },
             ),
@@ -130,29 +153,36 @@ class _HomePageState extends State<HomePage> {
     final input = value.trim().toLowerCase();
     if (input.isEmpty || _regions == null) return;
 
-    String? matchedId;
+    Region? matchedRegion;
     for (final r in _regions!) {
       if (r.id.toLowerCase() == input) {
-        matchedId = r.id;
+        matchedRegion = r;
         break;
       }
       try {
         final dynamic dyn = r;
         if (dyn.name != null &&
             dyn.name.toString().trim().toLowerCase() == input) {
-          matchedId = r.id;
+          matchedRegion = r;
           break;
         }
       } catch (_) {}
     }
 
-    setState(() {
-      if (matchedId != null) {
-        guessed.add(matchedId);
-      } else {
+    if (matchedRegion != null) {
+      final center = _calculateRegionCenter(matchedRegion);
+      setState(() {
+        guessed.add(matchedRegion!.id);
+        // เลื่อนและซูมเข้ามาตรงกลางประเทศที่ทายถูก
+        _focalLatLng = center;
+        _zoomLevel = 3.8;
+        _mapKey++; // สั่งอัปเดตตำแหน่งแผนที่อย่างสมบูรณ์โดยไม่ให้ Gesture พัง
+      });
+    } else {
+      setState(() {
         guessed.add(input);
-      }
-    });
+      });
+    }
 
     controller.clear();
 
@@ -264,7 +294,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          // 1. แผนที่โลกจาก Syncfusion
+          // 1. แผนที่โลกจาก Syncfusion (ผูก key เพื่อให้เลื่อนตำแหน่งได้ถูกต้อง)
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : Container(
@@ -272,10 +302,18 @@ class _HomePageState extends State<HomePage> {
                   width: double.infinity,
                   height: double.infinity,
                   child: SfMaps(
+                    key: ValueKey('sf_map_$_mapKey'),
                     layers: [
                       MapShapeLayer(
                         source: _buildShapeSource(),
-                        zoomPanBehavior: _zoomPanBehavior,
+                        zoomPanBehavior: MapZoomPanBehavior(
+                          enablePinching: true,
+                          enablePanning: true,
+                          zoomLevel: _zoomLevel,
+                          minZoomLevel: 1.8,
+                          maxZoomLevel: 10.0,
+                          focalLatLng: _focalLatLng,
+                        ),
                         strokeColor: Colors.white,
                         strokeWidth: 0.6,
                         color: Colors.grey.shade400,
