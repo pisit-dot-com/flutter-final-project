@@ -1,13 +1,12 @@
-import 'package:final_project/pages/home_page.dart';
 import 'package:flutter/material.dart';
-
-
-//this is test3
+import 'pages/menu_page.dart';
 
 void main() {
-  runApp(MaterialApp(
-    title: 'Guess Country',
-    debugShowCheckedModeBanner: false,
-    home: HomePage()
-  ));
+  runApp(
+    const MaterialApp(
+      title: 'Guess Country',
+      debugShowCheckedModeBanner: false,
+      home: MenuPage(), // เปิดแอปมาเจอหน้าเมนูก่อน
+    ),
+  );
 }

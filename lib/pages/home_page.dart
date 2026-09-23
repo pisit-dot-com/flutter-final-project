@@ -11,112 +11,192 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // เก็บชื่อประเทศที่ทายถูกแล้ว
   final Set<String> guessed = {};
+
+  // ตัวควบคุมช่องพิมพ์คำตอบ
   final TextEditingController controller = TextEditingController();
 
+  // ตัวควบคุมการซูม (ข้างในเก็บค่าเป็น Matrix4)
+  final TransformationController zoomController = TransformationController();
+
+  // ขนาดของพื้นที่แผนที่ (ใช้หาจุดกลางตอนซูม)
+  Size mapSize = Size.zero;
+
+  // ข้อมูลแผนที่ (โหลดครั้งเดียวตอนเปิดหน้า)
+  late Future<List<Region>> mapData;
+
+  @override
+  void initState() {
+    super.initState();
+    mapData = GeojsonService().loadRegions();
+  }
+
+  // ---------- ตรวจคำตอบ ----------
   void checkAnswer(String value) {
     final answer = value.trim().toLowerCase();
     if (answer.isEmpty) return;
+
     setState(() {
       guessed.add(answer);
     });
     controller.clear();
   }
 
+  // ---------- ซูมโดยใช้ Matrix ----------
+  // factor มากกว่า 1 = ซูมเข้า, น้อยกว่า 1 = ซูมออก
+  void zoom(double factor) {
+    // เช็คว่าซูมแล้วไม่เกินขอบเขต (1 ถึง 20 เท่า)
+    final currentScale = zoomController.value.getMaxScaleOnAxis();
+    final newScale = currentScale * factor;
+    if (newScale < 1 || newScale > 20) return;
+
+    // หาจุดกลางของแผนที่
+    final cx = mapSize.width / 2;
+    final cy = mapSize.height / 2;
+
+    // ขั้น 1: เลื่อนจุดกลางไปที่ (0,0)
+    final moveToOrigin = Matrix4.translationValues(-cx, -cy, 0);
+    // ขั้น 2: ขยาย/ย่อ
+    final scale = Matrix4.diagonal3Values(factor, factor, 1);
+    // ขั้น 3: เลื่อนกลับที่เดิม
+    final moveBack = Matrix4.translationValues(cx, cy, 0);
+
+    // รวมทั้งหมด: moveBack × scale × moveToOrigin × เมทริกซ์เดิม
+    // (คูณจากขวาไปซ้าย = ทำขั้น 1 ก่อน แล้ว 2 แล้ว 3)
+    zoomController.value = moveBack
+        .multiplied(scale)
+        .multiplied(moveToOrigin)
+        .multiplied(zoomController.value);
+  }
+
+  // กลับเป็นขนาดปกติ (Identity Matrix = ไม่ซูม ไม่เลื่อน)
+  void resetZoom() {
+    zoomController.value = Matrix4.identity();
+  }
+
+  // ---------- หน้าจอหลัก ----------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xff4f6fb0),
-        foregroundColor: Colors.white,
-        toolbarHeight: 60,
-        titleSpacing: 10,
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(4)),
-              child: Image.network(
-                height: 40,
-                "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Pornhub-logo.svg/3840px-Pornhub-logo.svg.png?utm_source=th.wikipedia.org&utm_campaign=index&utm_content=thumbnail",
-              ),
-            ),
-            SizedBox(width: 50),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text("Menu"),
-            ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text("Random"),
-            ),
-            SizedBox(width: 20),
-            Container(
-              width: 200,
-              height: 36,
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Text(
-                "Search Quizzes users or tags",
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            child: Text("Create Account"),
-          ),
-          SizedBox(width: 10),
-        ],
-      ),
+      appBar: buildAppBar(),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'พิมพ์ชื่อประเทศ แล้วกด Enter',
-              ),
-              onSubmitted: checkAnswer,
+          buildAnswerBox(),
+          Text('ทายถูกแล้ว ${guessed.length} ประเทศ'),
+          Expanded(child: buildMap()),
+        ],
+      ),
+      floatingActionButton: buildZoomButtons(),
+    );
+  }
+
+  // ---------- แถบด้านบน: โลโก้ + ชื่อแอป ----------
+  PreferredSizeWidget buildAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xff4f6fb0),
+      foregroundColor: Colors.white,
+      toolbarHeight: 60,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // โลโก้
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: const Icon(Icons.public, color: Color(0xff4f6fb0), size: 28),
           ),
-          Expanded(
-            child: FutureBuilder<List<Region>>(
-              future: GeojsonService().loadRegions(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return Center(
-                  child: CustomPaint(
-                    size: const Size(900, 450),
-                    painter: MapPainter(snapshot.data!, guessed),
-                  ),
-                );
-              },
-            ),
+          const SizedBox(width: 10),
+          // ชื่อแอป
+          const Text(
+            'Guess Country',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
       ),
+    );
+  }
+
+  // ---------- ช่องพิมพ์คำตอบ ----------
+  Widget buildAnswerBox() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: TextField(
+        controller: controller,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          hintText: 'พิมพ์ชื่อประเทศ แล้วกด Enter',
+        ),
+        onSubmitted: checkAnswer,
+      ),
+    );
+  }
+
+  // ---------- แผนที่ ----------
+  Widget buildMap() {
+    return FutureBuilder<List<Region>>(
+      future: mapData,
+      builder: (context, snapshot) {
+        // ยังโหลดไม่เสร็จ แสดงวงกลมหมุน
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // LayoutBuilder บอกขนาดพื้นที่ที่แผนที่ได้รับ
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            mapSize = constraints.biggest;
+
+            // InteractiveViewer ทำให้ถ่างนิ้ว/หมุนลูกกลิ้งเมาส์เพื่อซูมได้
+            return InteractiveViewer(
+              transformationController: zoomController,
+              minScale: 1,
+              maxScale: 20,
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: 2, // แผนที่โลกกว้าง 2 เท่าของความสูง
+                  // RepaintBoundary = วาดแผนที่ครั้งเดียวแล้วเก็บเป็นภาพไว้
+                  // ตอนซูม/ลาก แค่ขยาย/เลื่อนภาพเดิม ไม่ต้องวาดใหม่
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: MapPainter(snapshot.data!, guessed),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ---------- ปุ่มซูม มุมขวาล่าง ----------
+  Widget buildZoomButtons() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton.small(
+          heroTag: 'zoomIn',
+          onPressed: () => zoom(1.5), // ซูมเข้า 1.5 เท่า
+          child: const Icon(Icons.add),
+        ),
+        const SizedBox(height: 8),
+        FloatingActionButton.small(
+          heroTag: 'zoomOut',
+          onPressed: () => zoom(1 / 1.5), // ซูมออก
+          child: const Icon(Icons.remove),
+        ),
+        const SizedBox(height: 8),
+        FloatingActionButton.small(
+          heroTag: 'reset',
+          onPressed: resetZoom,
+          child: const Icon(Icons.zoom_out_map),
+        ),
+      ],
     );
   }
 }
