@@ -227,6 +227,9 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 8,
+        
+        // --- คอมเมนต์ซ่อนปุ่ม Menu และ Random ---
+        /*
         title: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
@@ -254,11 +257,13 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+        */
+        
         actions: [
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              margin: const EdgeInsets.only(right: 8),
+              margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 color: Colors.white24,
                 borderRadius: BorderRadius.circular(4),
@@ -276,6 +281,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+
+          // --- คอมเมนต์ซ่อนปุ่ม Create Account ---
+          /*
           ElevatedButton.icon(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
@@ -290,6 +298,7 @@ class _HomePageState extends State<HomePage> {
             label: const Text("Create Account", style: TextStyle(fontSize: 13)),
           ),
           const SizedBox(width: 8),
+          */
         ],
       ),
       body: Stack(
