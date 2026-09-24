@@ -4,11 +4,9 @@ import 'flag_quiz_page.dart';
 import 'members_page.dart';
 import 'scores_page.dart';
 
-// หน้าเมนูหลัก (หน้าแรกของแอป)
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
 
-  // เปิดหน้าใหม่
   void openPage(BuildContext context, Widget page) {
     Navigator.push(
       context,
@@ -35,7 +33,6 @@ class MenuPage extends StatelessWidget {
                 const Text('เลือกเกมที่อยากเล่น'),
                 const SizedBox(height: 30),
 
-                // Wrap = จอกว้างการ์ดอยู่ข้างกัน, จอแคบขึ้นบรรทัดใหม่
                 Wrap(
                   spacing: 16,
                   runSpacing: 16,

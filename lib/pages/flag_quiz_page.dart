@@ -4,7 +4,6 @@ import '../services/country_service.dart';
 import '../services/score_service.dart';
 import 'scores_page.dart';
 
-// มินิเกม: ดูธงแล้วทายชื่อประเทศ
 class FlagQuizPage extends StatefulWidget {
   const FlagQuizPage({super.key});
 
@@ -13,12 +12,12 @@ class FlagQuizPage extends StatefulWidget {
 }
 
 class _FlagQuizPageState extends State<FlagQuizPage> {
-  static const int totalQuestions = 10; // 1 รอบมี 10 ข้อ
+  static const int totalQuestions = 10; 
 
-  List<Country> allCountries = []; // ทุกประเทศจาก API
-  List<Country> questions = [];    // 10 ประเทศที่สุ่มมาเป็นโจทย์
-  int currentIndex = 0;            // ตอนนี้อยู่ข้อที่เท่าไหร่
-  int score = 0;                   // คะแนน
+  List<Country> allCountries = []; 
+  List<Country> questions = [];    
+  int currentIndex = 0;            
+  int score = 0;                   
 
   bool isLoading = true;
   String? errorMessage;
@@ -32,7 +31,6 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     loadCountries();
   }
 
-  // ---------- โหลดข้อมูลจาก API ----------
   Future<void> loadCountries() async {
     setState(() {
       isLoading = true;
@@ -51,9 +49,7 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     });
   }
 
-  // ---------- เริ่มเกมใหม่ ----------
   void startNewGame() {
-    // สุ่มลำดับประเทศ แล้วเอามา 10 ประเทศ
     final shuffled = List<Country>.from(allCountries)..shuffle();
     setState(() {
       questions = shuffled.take(totalQuestions).toList();
@@ -62,7 +58,6 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     });
   }
 
-  // ---------- ตรวจคำตอบ ----------
   void checkAnswer(String value) {
     final answer = value.trim().toLowerCase();
     if (answer.isEmpty) return;
@@ -78,10 +73,9 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     }
 
     controller.clear();
-    focusNode.requestFocus(); // ให้พิมพ์ต่อได้เลย
+    focusNode.requestFocus(); 
   }
 
-  // ---------- ข้ามข้อนี้ ----------
   void skipQuestion() {
     showMessage('เฉลย: ${questions[currentIndex].name}', Colors.orange);
     controller.clear();
@@ -91,7 +85,7 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
   // ---------- ไปข้อถัดไป ----------
   void goToNextQuestion() {
     if (currentIndex + 1 >= questions.length) {
-      showResultDialog(); // ครบ 10 ข้อแล้ว
+      showResultDialog(); 
     } else {
       setState(() {
         currentIndex++;
@@ -99,7 +93,6 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     }
   }
 
-  // ---------- แถบข้อความด้านล่างจอ ----------
   void showMessage(String text, Color color) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -111,14 +104,11 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     );
   }
 
-  // ---------- บันทึกคะแนนลง Firebase ----------
   Future<void> saveScore(String name) async {
-    // ถ้าไม่ใส่ชื่อ ใช้ชื่อ "ไม่ระบุชื่อ"
     if (name.trim().isEmpty) name = 'ไม่ระบุชื่อ';
 
     await ScoreService().addScore(name.trim(), score); // C
 
-    // บันทึกเสร็จ ไปหน้าตารางคะแนน
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
@@ -126,13 +116,12 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     );
   }
 
-  // ---------- หน้าต่างสรุปคะแนน ----------
   void showResultDialog() {
     final nameController = TextEditingController();
 
     showDialog(
       context: context,
-      barrierDismissible: false, // ต้องกดปุ่มเท่านั้น
+      barrierDismissible: false, 
       builder: (dialogContext) => AlertDialog(
         title: const Text('จบเกม!', textAlign: TextAlign.center),
         content: Column(
@@ -145,7 +134,6 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            // ช่องใส่ชื่อ
             TextField(
               controller: nameController,
               decoration: const InputDecoration(
@@ -165,8 +153,8 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // ปิดหน้าต่าง
-              saveScore(nameController.text); // บันทึก
+              Navigator.pop(dialogContext); 
+              saveScore(nameController.text); 
             },
             child: const Text('บันทึกคะแนน'),
           ),
@@ -189,12 +177,10 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
   }
 
   Widget buildBody() {
-    // กำลังโหลด
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // โหลดไม่สำเร็จ
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -211,18 +197,15 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
       );
     }
 
-    // พร้อมเล่น
     final country = questions[currentIndex];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Center(
-        // จำกัดความกว้างไม่เกิน 500 จะได้ไม่ยืดเกินไปบนจอคอม
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 500),
           child: Column(
             children: [
-              // ข้อที่ / คะแนน
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -241,7 +224,6 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
               ),
               const SizedBox(height: 20),
 
-              // รูปธง (โหลดจากอินเทอร์เน็ต)
               Card(
                 elevation: 4,
                 child: Padding(
