@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665187382457",
+    "project_id": "guess-country-bf3b6",
+    "storage_bucket": "guess-country-bf3b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665187382457:android:a5d071760738885fb8d768",
+        "android_client_info": {
+          "package_name": "com.example.final_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3js21e79w3PIJf2os8uejYaLBmlc67_s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
