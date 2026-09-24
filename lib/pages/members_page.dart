@@ -6,13 +6,15 @@ class MembersPage extends StatelessWidget {
   final List<Map<String, String>> members = const [
     {
       'name': 'นายพิศิษฐ์ หาสุข',
-      'id': '6xxxxxxxxx',
+      'id': '6721652463',
       'role': 'ออกแบบหน้าจอ, ระบบแผนที่',
+      'image': 'assets/images/skibidi.jpg',
     },
     {
       'name': 'นายสิรภพ ศรีชัย',
-      'id': '6xxxxxxxxx',
+      'id': '6721652722',
       'role': 'Database, เรียก API',
+      'image': 'assets/images/tung_tung.jpg',
     },
   ];
 
@@ -24,16 +26,30 @@ class MembersPage extends StatelessWidget {
         foregroundColor: Colors.white,
         title: const Text('สมาชิกกลุ่ม'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Wrap(
-            spacing: 20,     
-            runSpacing: 20,  
-            alignment: WrapAlignment.center,
-            children: [
-              for (final m in members) buildMemberCard(m),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xffa8c8ff),
+              Color(0xffeef3f8),
             ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: Wrap(
+              spacing: 20,
+              runSpacing: 20,
+              alignment: WrapAlignment.center,
+              children: [
+                for (final m in members) buildMemberCard(m),
+              ],
+            ),
           ),
         ),
       ),
@@ -52,10 +68,9 @@ class MembersPage extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const CircleAvatar(
-                radius: 45,
-                backgroundColor: Color(0xff4f6fb0),
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage(member['image']!),
               ),
               const SizedBox(height: 16),
 

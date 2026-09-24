@@ -17,58 +17,78 @@ class MenuPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffeef3f8),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                const Icon(Icons.public, size: 80, color: Color(0xff4f6fb0)),
-                const Text(
-                  'Guess Country',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-                const Text('เลือกเกมที่อยากเล่น'),
-                const SizedBox(height: 30),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xffa8c8ff),
+              Color(0xffeef3f8),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  ClipOval(
+                    child: Image.network(
+                      "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Map_of_Thailand_in_WWII.svg/250px-Map_of_Thailand_in_WWII.svg.png",
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const Text(
+                    'Guess Country',
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  const Text('เลือกเกมที่อยากเล่น'),
+                  const SizedBox(height: 30),
 
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    buildMenuCard(
-                      icon: Icons.map,
-                      title: 'เกมแผนที่โลก',
-                      subtitle: 'พิมพ์ชื่อประเทศให้ครบทั้งโลก',
-                      color: Colors.green,
-                      onTap: () => openPage(context, const HomePage()),
-                    ),
-                    buildMenuCard(
-                      icon: Icons.flag,
-                      title: 'ทายธงชาติ',
-                      subtitle: 'ดูธงแล้วทายชื่อประเทศ 10 ข้อ',
-                      color: Colors.orange,
-                      onTap: () => openPage(context, const FlagQuizPage()),
-                    ),
-                    buildMenuCard(
-                      icon: Icons.leaderboard,
-                      title: 'ตารางคะแนน',
-                      subtitle: 'ดู แก้ไข ลบ คะแนน',
-                      color: Colors.blue,
-                      onTap: () => openPage(context, const ScoresPage()),
-                    ),
-                    buildMenuCard(
-                      icon: Icons.group,
-                      title: 'สมาชิกกลุ่ม',
-                      subtitle: 'ผู้จัดทำโปรเจค',
-                      color: Colors.purple,
-                      onTap: () => openPage(context, const MembersPage()),
-                    ),
-                  ],
-                ),
-              ],
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      buildMenuCard(
+                        icon: Icons.map,
+                        title: 'เกมแผนที่โลก',
+                        subtitle: 'พิมพ์ชื่อประเทศให้ครบทั้งโลก',
+                        color: Colors.green,
+                        onTap: () => openPage(context, const HomePage()),
+                      ),
+                      buildMenuCard(
+                        icon: Icons.flag,
+                        title: 'ทายธงชาติ',
+                        subtitle: 'ดูธงแล้วทายชื่อประเทศ 10 ข้อ',
+                        color: Colors.orange,
+                        onTap: () => openPage(context, const FlagQuizPage()),
+                      ),
+                      buildMenuCard(
+                        icon: Icons.leaderboard,
+                        title: 'ตารางคะแนน',
+                        subtitle: 'ดู แก้ไข ลบ คะแนน',
+                        color: Colors.blue,
+                        onTap: () => openPage(context, const ScoresPage()),
+                      ),
+                      buildMenuCard(
+                        icon: Icons.group,
+                        title: 'สมาชิกกลุ่ม',
+                        subtitle: 'ผู้จัดทำโปรเจค',
+                        color: Colors.purple,
+                        onTap: () => openPage(context, const MembersPage()),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -76,7 +96,6 @@ class MenuPage extends StatelessWidget {
     );
   }
 
-  // การ์ดเมนู 1 อัน
   Widget buildMenuCard({
     required IconData icon,
     required String title,

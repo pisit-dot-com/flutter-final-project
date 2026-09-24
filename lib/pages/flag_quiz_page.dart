@@ -12,12 +12,12 @@ class FlagQuizPage extends StatefulWidget {
 }
 
 class _FlagQuizPageState extends State<FlagQuizPage> {
-  static const int totalQuestions = 10; 
+  static const int totalQuestions = 10;
 
-  List<Country> allCountries = []; 
-  List<Country> questions = [];    
-  int currentIndex = 0;            
-  int score = 0;                   
+  List<Country> allCountries = [];
+  List<Country> questions = [];
+  int currentIndex = 0;
+  int score = 0;
 
   bool isLoading = true;
   String? errorMessage;
@@ -73,7 +73,7 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     }
 
     controller.clear();
-    focusNode.requestFocus(); 
+    focusNode.requestFocus();
   }
 
   void skipQuestion() {
@@ -85,7 +85,7 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
   // ---------- ไปข้อถัดไป ----------
   void goToNextQuestion() {
     if (currentIndex + 1 >= questions.length) {
-      showResultDialog(); 
+      showResultDialog();
     } else {
       setState(() {
         currentIndex++;
@@ -121,7 +121,7 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
 
     showDialog(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text('จบเกม!', textAlign: TextAlign.center),
         content: Column(
@@ -153,8 +153,8 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(dialogContext); 
-              saveScore(nameController.text); 
+              Navigator.pop(dialogContext);
+              saveScore(nameController.text);
             },
             child: const Text('บันทึกคะแนน'),
           ),
@@ -172,7 +172,21 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
         foregroundColor: Colors.white,
         title: const Text('ทายธงชาติ'),
       ),
-      body: buildBody(),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xffa8c8ff),
+              Color(0xffeef3f8),
+            ],
+          ),
+        ),
+        child: buildBody(),
+      ),
     );
   }
 
@@ -246,6 +260,8 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
                 autofocus: true,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                   hintText: 'ธงนี้คือประเทศอะไร? (ภาษาอังกฤษ)',
                 ),
                 onSubmitted: checkAnswer,

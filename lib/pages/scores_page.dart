@@ -48,59 +48,73 @@ class ScoresPage extends StatelessWidget {
         foregroundColor: Colors.white,
         title: const Text('ตารางคะแนน (ทายธง)'),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: ScoreService().getScores(), 
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xffa8c8ff),
+              Color(0xffeef3f8),
+            ],
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: ScoreService().getScores(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              final docs = snapshot.data!.docs;
+                final docs = snapshot.data!.docs;
 
-              if (docs.isEmpty) {
-                return const Center(child: Text('ยังไม่มีคะแนน ไปเล่นเกมทายธงก่อนนะ'));
-              }
+                if (docs.isEmpty) {
+                  return const Center(child: Text('ยังไม่มีคะแนน ไปเล่นเกมทายธงก่อนนะ'));
+                }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final doc = docs[index];
-                  final data = doc.data() as Map<String, dynamic>;
-                  final date = (data['date'] as Timestamp).toDate();
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    final date = (data['date'] as Timestamp).toDate();
 
-                  return Card(
-                    child: ListTile(
-                      leading: CircleAvatar(child: Text('${index + 1}')),
-                      title: Text(
-                        data['name'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    return Card(
+                      child: ListTile(
+                        leading: CircleAvatar(child: Text('${index + 1}')),
+                        title: Text(
+                          data['name'],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '${data['score']} / 10 คะแนน  •  ${date.day}/${date.month}/${date.year}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () =>
+                                  showEditDialog(context, doc.id, data['name']),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => deleteScore(context, doc.id),
+                            ),
+                          ],
+                        ),
                       ),
-                      subtitle: Text(
-                        '${data['score']} / 10 คะแนน  •  ${date.day}/${date.month}/${date.year}',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () =>
-                                showEditDialog(context, doc.id, data['name']),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => deleteScore(context, doc.id),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),
