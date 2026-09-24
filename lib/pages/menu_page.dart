@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'flag_quiz_page.dart';
 import 'members_page.dart';
+import 'scores_page.dart';
 
 // หน้าเมนูหลัก (หน้าแรกของแอป)
 class MenuPage extends StatelessWidget {
@@ -53,6 +54,13 @@ class MenuPage extends StatelessWidget {
                       subtitle: 'ดูธงแล้วทายชื่อประเทศ 10 ข้อ',
                       color: Colors.orange,
                       onTap: () => openPage(context, const FlagQuizPage()),
+                    ),
+                    buildMenuCard(
+                      icon: Icons.leaderboard,
+                      title: 'ตารางคะแนน',
+                      subtitle: 'ดู แก้ไข ลบ คะแนน',
+                      color: Colors.blue,
+                      onTap: () => openPage(context, const ScoresPage()),
                     ),
                     buildMenuCard(
                       icon: Icons.group,

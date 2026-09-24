@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/country.dart';
 import '../services/country_service.dart';
+import '../services/score_service.dart';
+import 'scores_page.dart';
 
 // มินิเกม: ดูธงแล้วทายชื่อประเทศ
 class FlagQuizPage extends StatefulWidget {
@@ -109,8 +111,25 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
     );
   }
 
+  // ---------- บันทึกคะแนนลง Firebase ----------
+  Future<void> saveScore(String name) async {
+    // ถ้าไม่ใส่ชื่อ ใช้ชื่อ "ไม่ระบุชื่อ"
+    if (name.trim().isEmpty) name = 'ไม่ระบุชื่อ';
+
+    await ScoreService().addScore(name.trim(), score); // C
+
+    // บันทึกเสร็จ ไปหน้าตารางคะแนน
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ScoresPage()),
+    );
+  }
+
   // ---------- หน้าต่างสรุปคะแนน ----------
   void showResultDialog() {
+    final nameController = TextEditingController();
+
     showDialog(
       context: context,
       barrierDismissible: false, // ต้องกดปุ่มเท่านั้น
@@ -125,22 +144,31 @@ class _FlagQuizPageState extends State<FlagQuizPage> {
               'คุณได้ $score / $totalQuestions คะแนน',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 16),
+            // ช่องใส่ชื่อ
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'ชื่อของคุณ',
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // ปิดหน้าต่าง
-              Navigator.pop(context);       // กลับหน้าเมนู
-            },
-            child: const Text('กลับเมนู'),
-          ),
-          ElevatedButton(
-            onPressed: () {
               Navigator.pop(dialogContext);
               startNewGame();
             },
             child: const Text('เล่นอีกครั้ง'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // ปิดหน้าต่าง
+              saveScore(nameController.text); // บันทึก
+            },
+            child: const Text('บันทึกคะแนน'),
           ),
         ],
       ),
